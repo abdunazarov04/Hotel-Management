@@ -1,5 +1,7 @@
 package biz.javachi.HotelManagement.service;
 
+import biz.javachi.HotelManagement.config.CustomUserDetails;
+import biz.javachi.HotelManagement.dto.LoginRequest;
 import biz.javachi.HotelManagement.repository.TokenRepository;
 import biz.javachi.HotelManagement.repository.UserRepository;
 import biz.javachi.HotelManagement.dto.ApiResponseDto;
@@ -11,6 +13,11 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -72,4 +79,40 @@ public class AuthService {
         userRepository.save(user);
         tokenRepository.deleteByToken(token);
     }
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    public ApiResponseDto<String> login(LoginRequest dto) {
+        User user = this.userRepository.findByUsername(dto.getUsername());
+        if (user == null) {
+            System.out.println("User not found");
+            throw new IllegalArgumentException("User not found");
+        }
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            System.out.println("Wrong password");
+            throw new IllegalArgumentException("Wrong password");
+        }
+        CustomUserDetails customUserDetails = new CustomUserDetails(user);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(customUserDetails, dto.getPassword(), customUserDetails.getAuthorities());
+        Authentication authenticatedUser;
+        try {
+            authenticatedUser = authenticationManager.authenticate(authentication);
+
+            SecurityContext securityContext = SecurityContextHolder.getContext();
+            securityContext.setAuthentication(authentication);
+            securityContext.getAuthentication().getAuthorities().forEach(System.out::println);
+            System.out.println("User authenticated: " + authenticatedUser.getName());
+
+        } catch (Exception e) {
+            System.out.println("Authentication failed: " + e.getMessage());
+            throw e;
+        }
+
+        return ApiResponseDto.<String>builder()
+                .code(200)
+                .message("Kirish muvaffaqiyatli bo'ldi.")
+                .data(authenticatedUser.getAuthorities().toString())
+                .build();
+    }
+
 }

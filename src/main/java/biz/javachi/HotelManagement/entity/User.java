@@ -4,6 +4,7 @@ import biz.javachi.HotelManagement.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -13,6 +14,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
+@ToString
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,7 +22,10 @@ public class User {
     private String username;
     private String email;
     private String password;
+
     @ElementCollection
-    private Set<Role> roles;
+    @Enumerated(EnumType.STRING)
+    private Set<Role> roles = new HashSet<>();
+
     private boolean enabled;
 }
