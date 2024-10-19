@@ -1,6 +1,5 @@
 package biz.javachi.HotelManagement.entity;
 
-import biz.javachi.HotelManagement.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,8 +22,10 @@ public class User {
     private String email;
     private String password;
 
-    @ElementCollection
-    @Enumerated(EnumType.STRING)
+    @OneToMany(
+            cascade = CascadeType.ALL,
+            fetch = FetchType.EAGER
+    )
     private Set<Role> roles = new HashSet<>();
 
     private boolean enabled;
